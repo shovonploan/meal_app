@@ -10,6 +10,7 @@ import 'package:meal/logic/mealCubit.dart';
 import 'package:meal/logic/monthCubit.dart';
 import 'package:meal/logic/paymentCubit.dart';
 import 'package:meal/logic/scrollCubit.dart';
+import 'package:meal/logic/summaryCubit.dart';
 import 'package:meal/models/models.dart';
 import 'package:wheel_chooser/wheel_chooser.dart';
 
@@ -47,6 +48,7 @@ class _MealPageState extends State<MealPage>
       body: BlocBuilder<ScrollCubit, ScrollState>(builder: (context, state) {
         BlocProvider.of<MealCubit>(context).getRecent(DateTime.now().month);
         BlocProvider.of<PaymentCubit>(context).getRecent(DateTime.now().month);
+        BlocProvider.of<SummaryCubit>(context).getRecent(DateTime.now().month);
         BlocProvider.of<MonthCubit>(context).reset();
         return Column(
           children: [
@@ -381,6 +383,11 @@ class _MealPageState extends State<MealPage>
                                             BlocProvider.of<MonthCubit>(context)
                                                 .state
                                                 .month);
+                                    BlocProvider.of<SummaryCubit>(context)
+                                        .getRecent(
+                                            BlocProvider.of<MonthCubit>(context)
+                                                .state
+                                                .month);
                                   },
                                   child: const FaIcon(
                                     FontAwesomeIcons.angleLeft,
@@ -408,6 +415,11 @@ class _MealPageState extends State<MealPage>
                                                 .state
                                                 .month);
                                     BlocProvider.of<PaymentCubit>(context)
+                                        .getRecent(
+                                            BlocProvider.of<MonthCubit>(context)
+                                                .state
+                                                .month);
+                                    BlocProvider.of<SummaryCubit>(context)
                                         .getRecent(
                                             BlocProvider.of<MonthCubit>(context)
                                                 .state

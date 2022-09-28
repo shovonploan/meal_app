@@ -33,4 +33,16 @@ class PaymentDB {
     }
     return [];
   }
+
+  static Future<int> getTotal(int month) async {
+    final db = await Connection.instance.database;
+    final maps = await db.query(tablePayment,
+        columns: ["SUM(${MealFields.amount}) as s"],
+        where: "${MealFields.month}=? AND ${MealFields.year}=?",
+        whereArgs: [month, DateTime.now().year]);
+    if (maps.isNotEmpty) {
+      maps[0]["s"];
+    }
+    return 0;
+  }
 }

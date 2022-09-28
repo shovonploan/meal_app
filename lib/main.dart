@@ -7,6 +7,7 @@ import 'package:meal/logic/monthCubit.dart';
 import 'package:meal/logic/pageCubit.dart';
 import 'package:meal/logic/paymentCubit.dart';
 import 'package:meal/logic/scrollCubit.dart';
+import 'package:meal/logic/summaryCubit.dart';
 import 'package:meal/pages/authenticte.dart';
 
 void main() {
@@ -25,6 +26,7 @@ class MyApp extends StatelessWidget {
           BlocProvider(create: (context) => DateCubit()),
           BlocProvider(create: (context) => MealCubit()),
           BlocProvider(create: (context) => PaymentCubit()),
+          BlocProvider(create: (context) => SummaryCubit()),
         ],
         child: ScreenUtilInit(
           designSize: const Size(392, 781),
