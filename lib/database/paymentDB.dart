@@ -20,4 +20,17 @@ class PaymentDB {
     await db.delete(tablePayment,
         where: "${PaymentFields.id} = ?", whereArgs: [id]);
   }
+
+  static Future<List<Payment>> getPayments(int month) async {
+    final db = await Connection.instance.database;
+    DateTime now = DateTime.now();
+    final maps = await db.query(tablePayment,
+        columns: PaymentFields.values,
+        where: "${MealFields.month}=? AND ${MealFields.year}=?",
+        whereArgs: [month, now.year]);
+    if (maps.isNotEmpty) {
+      return maps.map((e) => Payment.fromMap(e)).toList();
+    }
+    return [];
+  }
 }

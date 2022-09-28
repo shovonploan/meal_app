@@ -8,8 +8,10 @@ import 'package:meal/database/mealDB.dart';
 import 'package:meal/logic/dateCubit.dart';
 import 'package:meal/logic/mealCubit.dart';
 import 'package:meal/logic/monthCubit.dart';
+import 'package:meal/logic/paymentCubit.dart';
 import 'package:meal/logic/scrollCubit.dart';
 import 'package:meal/models/models.dart';
+import 'package:wheel_chooser/wheel_chooser.dart';
 
 class MealPage extends StatefulWidget {
   const MealPage({super.key});
@@ -18,8 +20,25 @@ class MealPage extends StatefulWidget {
   State<MealPage> createState() => _MealPageState();
 }
 
-class _MealPageState extends State<MealPage> {
+class _MealPageState extends State<MealPage>
+    with SingleTickerProviderStateMixin {
+  late Animation<double> scaleAnimation;
+  late AnimationController controller;
   String data = "";
+  @override
+  void initState() {
+    super.initState();
+    controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 450));
+    scaleAnimation =
+        CurvedAnimation(parent: controller, curve: Curves.elasticInOut);
+
+    controller.addListener(() {
+      setState(() {});
+    });
+
+    controller.forward();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +46,7 @@ class _MealPageState extends State<MealPage> {
       backgroundColor: Colors.cyan.shade900,
       body: BlocBuilder<ScrollCubit, ScrollState>(builder: (context, state) {
         BlocProvider.of<MealCubit>(context).getRecent(DateTime.now().month);
+        BlocProvider.of<PaymentCubit>(context).getRecent(DateTime.now().month);
         BlocProvider.of<MonthCubit>(context).reset();
         return Column(
           children: [
@@ -91,137 +111,197 @@ class _MealPageState extends State<MealPage> {
                                   SlidableAction(
                                     borderRadius: BorderRadius.circular(20.r),
                                     onPressed: (context) => showDialog(
-                                      barrierDismissible: false,
                                       context: context,
+                                      barrierDismissible: false,
                                       builder: (BuildContext context) {
-                                        data = state.meals[index].amount
-                                            .toString();
                                         return WillPopScope(
                                           onWillPop: () async => false,
-                                          child: AlertDialog(
-                                            title: const Center(
-                                                child: Text("Edit Meal")),
-                                            content: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  "${state.meals[index].day}/${state.meals[index].month}",
-                                                  style: const TextStyle(
-                                                      color: Colors.grey),
-                                                ),
-                                                Expanded(
-                                                  child: TextField(
-                                                    keyboardType:
-                                                        TextInputType.phone,
-                                                    decoration: InputDecoration(
-                                                      hintText: data,
-                                                      hintStyle: TextStyle(
-                                                        color: Colors.black,
-                                                      ),
-                                                      suffixIcon: InkWell(
-                                                        onTap: () async {
-                                                          final DateTime date =
-                                                              await showDatePicker(
-                                                                  context:
-                                                                      context,
-                                                                  initialDate:
-                                                                      DateTime.parse(
-                                                                          '${state.meals[index].year}${formate(state.meals[index].month)}${state.meals[index].day}'),
-                                                                  firstDate:
-                                                                      DateTime(
-                                                                          2020,
-                                                                          8),
-                                                                  lastDate: DateTime
-                                                                      .now()) as DateTime;
-                                                          BlocProvider.of<
-                                                                      DateCubit>(
-                                                                  context)
-                                                              .refresh(date);
-                                                        },
-                                                        child: const Icon(Icons
-                                                            .calendar_month),
-                                                      ),
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: ScaleTransition(
+                                              scale: scaleAnimation,
+                                              child: Container(
+                                                color: Colors.transparent,
+                                                padding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        50, 200, 50, 400),
+                                                child: Center(
+                                                  child: Container(
+                                                    width: 0.8.sw,
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          const Color.fromRGBO(
+                                                              100, 223, 223, 1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10.r),
                                                     ),
-                                                    onChanged: (value) {
-                                                      data = value;
-                                                    },
+                                                    child: Column(
+                                                      children: [
+                                                        SizedBox(
+                                                          height: 5.h,
+                                                        ),
+                                                        Flexible(
+                                                          child: WheelChooser
+                                                              .integer(
+                                                            onValueChanged:
+                                                                (i) => data = i
+                                                                    .toString(),
+                                                            horizontal: true,
+                                                            isInfinite: true,
+                                                            maxValue: 5,
+                                                            minValue: 1,
+                                                            step: 1,
+                                                            initValue: state
+                                                                .meals[index]
+                                                                .amount,
+                                                          ),
+                                                        ),
+                                                        SizedBox(
+                                                          height: 5.h,
+                                                        ),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            BlocBuilder<
+                                                                    DateCubit,
+                                                                    DateState>(
+                                                                builder: (context,
+                                                                        state) =>
+                                                                    Text(
+                                                                      "${state.date.day}/${state.date.month}",
+                                                                      style: TextStyle(
+                                                                          fontSize: 16
+                                                                              .sp,
+                                                                          color:
+                                                                              Colors.black),
+                                                                    )),
+                                                            SizedBox(
+                                                              width: 5.w,
+                                                            ),
+                                                            BlocBuilder<
+                                                                    DateCubit,
+                                                                    DateState>(
+                                                                builder: (context,
+                                                                        state) =>
+                                                                    InkWell(
+                                                                      onTap:
+                                                                          () async {
+                                                                        final DateTime date = await showDatePicker(
+                                                                            context:
+                                                                                context,
+                                                                            initialDate: state
+                                                                                .date,
+                                                                            firstDate: DateTime(2020,
+                                                                                8),
+                                                                            lastDate:
+                                                                                DateTime.now()) as DateTime;
+                                                                        BlocProvider.of<DateCubit>(context)
+                                                                            .refresh(date);
+                                                                      },
+                                                                      child: const Icon(
+                                                                          Icons
+                                                                              .calendar_month),
+                                                                    )),
+                                                          ],
+                                                        ),
+                                                        SizedBox(
+                                                          height: 5.h,
+                                                        ),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            TextButton(
+                                                              onPressed: () {
+                                                                if (data !=
+                                                                    "") {
+                                                                  Meal meal = Meal(
+                                                                      id: state
+                                                                          .meals[
+                                                                              index]
+                                                                          .id,
+                                                                      amount: int
+                                                                          .parse(
+                                                                              data),
+                                                                      day: BlocProvider.of<DateCubit>(
+                                                                              context)
+                                                                          .state
+                                                                          .date
+                                                                          .day,
+                                                                      month: BlocProvider.of<DateCubit>(
+                                                                              context)
+                                                                          .state
+                                                                          .date
+                                                                          .month,
+                                                                      year: BlocProvider.of<DateCubit>(
+                                                                              context)
+                                                                          .state
+                                                                          .date
+                                                                          .year);
+                                                                  MealDB.update(
+                                                                      meal);
+                                                                  BlocProvider.of<
+                                                                              MealCubit>(
+                                                                          context)
+                                                                      .getRecent(BlocProvider.of<MonthCubit>(
+                                                                              context)
+                                                                          .state
+                                                                          .month);
+                                                                  data = "";
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop();
+                                                                }
+                                                              },
+                                                              child: Text(
+                                                                "Edit",
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        20.sp,
+                                                                    color: const Color
+                                                                            .fromRGBO(
+                                                                        94,
+                                                                        96,
+                                                                        206,
+                                                                        1)),
+                                                              ),
+                                                            ),
+                                                            TextButton(
+                                                              onPressed: () {
+                                                                data = "";
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop();
+                                                              },
+                                                              child: Text(
+                                                                "Cancel",
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        20.sp,
+                                                                    color: const Color
+                                                                            .fromRGBO(
+                                                                        94,
+                                                                        96,
+                                                                        206,
+                                                                        1)),
+                                                              ),
+                                                            )
+                                                          ],
+                                                        )
+                                                      ],
+                                                    ),
                                                   ),
                                                 ),
-                                              ],
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  if (data != "") {
-                                                    Meal meal = Meal(
-                                                        id: state
-                                                            .meals[index].id,
-                                                        amount: int.parse(data),
-                                                        day: BlocProvider.of<
-                                                                    DateCubit>(
-                                                                context)
-                                                            .state
-                                                            .date
-                                                            .day,
-                                                        month: BlocProvider.of<
-                                                                    DateCubit>(
-                                                                context)
-                                                            .state
-                                                            .date
-                                                            .month,
-                                                        year: BlocProvider.of<
-                                                                    DateCubit>(
-                                                                context)
-                                                            .state
-                                                            .date
-                                                            .year);
-                                                    MealDB.update(meal);
-                                                    BlocProvider.of<MealCubit>(
-                                                            context)
-                                                        .getRecent(BlocProvider
-                                                                .of<MonthCubit>(
-                                                                    context)
-                                                            .state
-                                                            .month);
-                                                    data = "";
-                                                    Navigator.of(context).pop();
-                                                  }
-                                                },
-                                                child: Text(
-                                                  "Edit",
-                                                  style: TextStyle(
-                                                      fontSize: 20.sp,
-                                                      color:
-                                                          const Color.fromRGBO(
-                                                              94, 96, 206, 1)),
-                                                ),
                                               ),
-                                              TextButton(
-                                                onPressed: () {
-                                                  data = "";
-                                                  Navigator.of(context).pop();
-                                                },
-                                                child: Text(
-                                                  "Cancel",
-                                                  style: TextStyle(
-                                                      fontSize: 20.sp,
-                                                      color:
-                                                          const Color.fromRGBO(
-                                                              94, 96, 206, 1)),
-                                                ),
-                                              )
-                                            ],
-                                            backgroundColor:
-                                                const Color.fromRGBO(
-                                                    100, 223, 223, 1),
-                                            elevation: 20,
-                                            clipBehavior: Clip.antiAlias,
+                                            ),
                                           ),
                                         );
                                       },
-                                    ), //TODO:Need to add
+                                    ),
                                     backgroundColor: Colors.greenAccent,
                                     foregroundColor: Colors.white,
                                     icon: Icons.edit,
@@ -296,7 +376,11 @@ class _MealPageState extends State<MealPage> {
                                             BlocProvider.of<MonthCubit>(context)
                                                 .state
                                                 .month);
-                                    //TODO : Need add for Payment
+                                    BlocProvider.of<PaymentCubit>(context)
+                                        .getRecent(
+                                            BlocProvider.of<MonthCubit>(context)
+                                                .state
+                                                .month);
                                   },
                                   child: const FaIcon(
                                     FontAwesomeIcons.angleLeft,
@@ -323,7 +407,11 @@ class _MealPageState extends State<MealPage> {
                                             BlocProvider.of<MonthCubit>(context)
                                                 .state
                                                 .month);
-                                    //TODO : Need add for Payment
+                                    BlocProvider.of<PaymentCubit>(context)
+                                        .getRecent(
+                                            BlocProvider.of<MonthCubit>(context)
+                                                .state
+                                                .month);
                                   },
                                   child: const FaIcon(
                                     FontAwesomeIcons.angleRight,
@@ -348,100 +436,139 @@ class _MealPageState extends State<MealPage> {
                 children: [
                   FloatingActionButton(
                     onPressed: () => showDialog(
-                      barrierDismissible: false,
                       context: context,
+                      barrierDismissible: false,
                       builder: (BuildContext context) {
+                        data = "1";
                         return WillPopScope(
                           onWillPop: () async => false,
-                          child: BlocBuilder<DateCubit, DateState>(
-                              builder: (context, state) {
-                            return AlertDialog(
-                              title: const Center(child: Text("New Meal")),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "${state.date.day}/${state.date.month}",
-                                    style: const TextStyle(color: Colors.grey),
-                                  ),
-                                  Expanded(
-                                    child: TextField(
-                                      keyboardType: TextInputType.phone,
-                                      decoration: InputDecoration(
-                                        suffixIcon: InkWell(
-                                          onTap: () async {
-                                            final DateTime date =
-                                                await showDatePicker(
-                                                        context: context,
-                                                        initialDate: state.date,
-                                                        firstDate:
-                                                            DateTime(2020, 8),
-                                                        lastDate:
-                                                            DateTime.now())
-                                                    as DateTime;
-                                            BlocProvider.of<DateCubit>(context)
-                                                .refresh(date);
-                                          },
-                                          child:
-                                              const Icon(Icons.calendar_month),
-                                        ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: BlocBuilder<DateCubit, DateState>(
+                              builder: (context, state) => ScaleTransition(
+                                scale: scaleAnimation,
+                                child: Container(
+                                  color: Colors.transparent,
+                                  padding: const EdgeInsets.fromLTRB(
+                                      50, 200, 50, 400),
+                                  child: Center(
+                                    child: Container(
+                                      width: 0.8.sw,
+                                      decoration: BoxDecoration(
+                                        color: const Color.fromRGBO(
+                                            100, 223, 223, 1),
+                                        borderRadius:
+                                            BorderRadius.circular(10.r),
                                       ),
-                                      onChanged: (value) {
-                                        data = value;
-                                      },
+                                      child: Column(
+                                        children: [
+                                          SizedBox(
+                                            height: 5.h,
+                                          ),
+                                          Flexible(
+                                            child: WheelChooser.integer(
+                                              onValueChanged: (i) =>
+                                                  data = i.toString(),
+                                              horizontal: true,
+                                              isInfinite: true,
+                                              maxValue: 5,
+                                              minValue: 1,
+                                              step: 1,
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 5.h,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                "${state.date.day}/${state.date.month}",
+                                                style: TextStyle(
+                                                    fontSize: 16.sp,
+                                                    color: Colors.black),
+                                              ),
+                                              SizedBox(
+                                                width: 5.w,
+                                              ),
+                                              InkWell(
+                                                onTap: () async {
+                                                  final DateTime date =
+                                                      await showDatePicker(
+                                                          context: context,
+                                                          initialDate:
+                                                              state.date,
+                                                          firstDate:
+                                                              DateTime(2020, 8),
+                                                          lastDate: DateTime
+                                                              .now()) as DateTime;
+                                                  BlocProvider.of<DateCubit>(
+                                                          context)
+                                                      .refresh(date);
+                                                },
+                                                child: const Icon(
+                                                    Icons.calendar_month),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(
+                                            height: 5.h,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Meal meal = Meal(
+                                                      amount: int.parse(data),
+                                                      day: state.date.day,
+                                                      month: state.date.month,
+                                                      year: state.date.year);
+                                                  MealDB.create(meal);
+                                                  BlocProvider.of<MealCubit>(
+                                                          context)
+                                                      .getRecent(BlocProvider
+                                                              .of<MonthCubit>(
+                                                                  context)
+                                                          .state
+                                                          .month);
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: Text(
+                                                  "Add",
+                                                  style: TextStyle(
+                                                      fontSize: 20.sp,
+                                                      color:
+                                                          const Color.fromRGBO(
+                                                              94, 96, 206, 1)),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  data = "";
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: Text(
+                                                  "Cancel",
+                                                  style: TextStyle(
+                                                      fontSize: 20.sp,
+                                                      color:
+                                                          const Color.fromRGBO(
+                                                              94, 96, 206, 1)),
+                                                ),
+                                              )
+                                            ],
+                                          )
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ],
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    if (data != "") {
-                                      Meal meal = Meal(
-                                          amount: int.parse(data),
-                                          day: state.date.day,
-                                          month: state.date.month,
-                                          year: state.date.year);
-                                      MealDB.create(meal);
-                                      BlocProvider.of<MealCubit>(context)
-                                          .getRecent(
-                                              BlocProvider.of<MonthCubit>(
-                                                      context)
-                                                  .state
-                                                  .month);
-                                      data = "";
-                                      Navigator.of(context).pop();
-                                    }
-                                  },
-                                  child: Text(
-                                    "Add",
-                                    style: TextStyle(
-                                        fontSize: 20.sp,
-                                        color: const Color.fromRGBO(
-                                            94, 96, 206, 1)),
-                                  ),
                                 ),
-                                TextButton(
-                                  onPressed: () {
-                                    data = "";
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Text(
-                                    "Cancel",
-                                    style: TextStyle(
-                                        fontSize: 20.sp,
-                                        color: const Color.fromRGBO(
-                                            94, 96, 206, 1)),
-                                  ),
-                                )
-                              ],
-                              backgroundColor:
-                                  const Color.fromRGBO(100, 223, 223, 1),
-                              elevation: 20,
-                              clipBehavior: Clip.antiAlias,
-                            );
-                          }),
+                              ),
+                            ),
+                          ),
                         );
                       },
                     ),
