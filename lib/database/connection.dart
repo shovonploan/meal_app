@@ -3,9 +3,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 class Connection {
-  static final Connection instance = Connection._init();
-  static Database? _database;
   Connection._init();
+
+  static final Connection instance = Connection._init();
+
+  static Database? _database;
 
   Future<Database> get database async {
     if (_database != null) {
@@ -13,6 +15,11 @@ class Connection {
     }
     _database = await _initDB('database.db');
     return _database!;
+  }
+
+  Future close() async {
+    final db = await instance.database;
+    db.close();
   }
 
   Future<Database> _initDB(String filePath) async {
@@ -25,10 +32,11 @@ class Connection {
     const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
     // const textType = 'TEXT NOT NULL';
     const integerType = 'INTEGER NOT NULL';
+    const numberType = 'NUMERIC NOT NULL';
 
     await db.execute('''CREATE TABLE IF NOT EXISTS $tableMeal (
       ${MealFields.id} $idType,
-      ${MealFields.amount} $integerType,
+      ${MealFields.amount} $numberType,
       ${MealFields.day} $integerType,
       ${MealFields.month} $integerType,
       ${MealFields.year} $integerType
@@ -40,10 +48,11 @@ class Connection {
       ${PaymentFields.month} $integerType,
       ${PaymentFields.year} $integerType
     )''');
-  }
-
-  Future close() async {
-    final db = await instance.database;
-    db.close();
+    await db.execute('''CREATE TABLE IF NOT EXISTS $tablePayBack (
+      ${PaymentFields.id} $idType,
+      ${PaymentFields.amount} $integerType,
+      ${PaymentFields.month} $integerType,
+      ${PaymentFields.year} $integerType
+    )''');
   }
 }

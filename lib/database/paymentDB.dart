@@ -40,8 +40,8 @@ class PaymentDB {
         columns: ["SUM(${MealFields.amount}) as s"],
         where: "${MealFields.month}=? AND ${MealFields.year}=?",
         whereArgs: [month, DateTime.now().year]);
-    if (maps.isNotEmpty) {
-      maps[0]["s"];
+    if (maps[0]["s"] != null) {
+      return maps[0]["s"] as int;
     }
     return 0;
   }

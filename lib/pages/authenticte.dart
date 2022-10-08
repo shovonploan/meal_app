@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:meal/auth/local_auth_api.dart';
+import 'package:meal/logic/monthCubit.dart';
 import 'package:meal/logic/pageCubit.dart';
 import 'package:meal/pages/meal/meal_page.dart';
 import 'package:meal/pages/payment/payment_page.dart';
@@ -37,6 +38,7 @@ class _AuthenticationPageState extends State<AuthenticationPage>
   @override
   Widget build(BuildContext context) =>
       BlocBuilder<PageCubit, PageState>(builder: (context, state) {
+        BlocProvider.of<MonthCubit>(context).reset();
         return !state.isAuthenticated
             ? DefaultTabController(
                 length: 3,

@@ -32,14 +32,19 @@ class MealDB {
     return [];
   }
 
-  static Future<int> getTotal(int month) async {
+  static Future<double> getTotal(int month) async {
     final db = await Connection.instance.database;
     final maps = await db.query(tableMeal,
         columns: ["SUM(${MealFields.amount}) as s"],
         where: "${MealFields.month}=? AND ${MealFields.year}=?",
         whereArgs: [month, DateTime.now().year]);
-    if (maps.isNotEmpty) {
-      maps[0]["s"];
+    if (maps[0]["s"] != null) {
+      final temp = maps[0]["s"];
+      if (temp is int) {
+        return temp.toDouble();
+      } else {
+        return temp as double;
+      }
     }
     return 0;
   }

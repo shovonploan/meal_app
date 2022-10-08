@@ -18,5 +18,8 @@
         "titleBar.inactiveBackground": "#47133499",
         "titleBar.inactiveForeground": "#e7e7e799"
     },
-    "peacock.color": "#471334"
+    "peacock.color": "#471334",
+    "cSpell.words": [
+        "Neumorphic"
+    ]
 }
