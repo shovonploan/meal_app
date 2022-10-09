@@ -1,3 +1,5 @@
+// ignore_for_file: file_names
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meal/database/paymentDB.dart';
 import 'package:meal/models/models.dart';

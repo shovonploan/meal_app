@@ -1,5 +1,4 @@
 // ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -22,11 +21,19 @@ class SummaryPage extends StatefulWidget {
 
 class _SummaryPageState extends State<SummaryPage>
     with SingleTickerProviderStateMixin {
-  late Animation<double> scaleAnimation;
   late AnimationController controller;
   String data = "";
   RegExp rg = RegExp(r'\d+(?:\.\d{1,1})?$');
+  late Animation<double> scaleAnimation;
   TextEditingController tx = TextEditingController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+    tx.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -41,11 +48,89 @@ class _SummaryPageState extends State<SummaryPage>
     controller.forward();
   }
 
-  @override
-  void dispose() {
-    controller.dispose();
-    tx.dispose();
-    super.dispose();
+  Future<void> edit(BuildContext context) async {
+    if (rg.hasMatch(data)) {
+      int id = await PayBackDB.getID(
+          BlocProvider.of<MonthCubit>(context).state.month);
+      PayBackDB.update(
+        id,
+        int.parse(data),
+      );
+      BlocProvider.of<SummaryCubit>(context)
+          .getRecent(BlocProvider.of<MonthCubit>(context).state.month);
+      cancel(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: SizedBox(
+            height: 50.h,
+            child: const Center(
+              child: Text('Use Number Only'),
+            ),
+          ),
+          duration: const Duration(milliseconds: 1500),
+          width: 0.9.sw,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8.0, // Inner padding for SnackBar content.
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void cancel(BuildContext context) {
+    Navigator.of(context).pop();
+    data = "";
+    tx.text = "";
+    BlocProvider.of<SummaryCubit>(context).show();
+  }
+
+  Row line(String heading, String amount) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 80.w,
+          child: Center(
+            child: Text(
+              heading,
+              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 20.w,
+        ),
+        Neumorphic(
+          style: NeumorphicStyle(
+            shape: NeumorphicShape.concave,
+            boxShape: NeumorphicBoxShape.roundRect(
+              BorderRadius.circular(12),
+            ),
+            depth: 8,
+            lightSource: LightSource.bottom,
+            color: const Color.fromARGB(255, 216, 215, 215),
+          ),
+          child: SizedBox(
+            width: 80.w,
+            height: 30.h,
+            child: Center(
+              child: Text(amount),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  TextStyle ts() {
+    return const TextStyle(
+        color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold);
   }
 
   @override
@@ -58,116 +143,136 @@ class _SummaryPageState extends State<SummaryPage>
         .getRecent(BlocProvider.of<MonthCubit>(context).state.month);
     return Scaffold(
       backgroundColor: Colors.cyan.shade900,
-      body: Column(
-        children: [
-          Container(
-            width: 1.sw,
-            decoration: BoxDecoration(
-              color: const Color.fromRGBO(72, 191, 227, 1),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(40.r),
-                bottomRight: Radius.circular(40.r),
-              ),
-            ),
-            child: Center(
-              child: Container(
-                width: 0.9.sw,
-                height: 40.h,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                      color: const Color.fromRGBO(255, 255, 255, 0.7),
-                      width: 3.sp),
-                  borderRadius: BorderRadius.circular(20.r),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              width: 1.sw,
+              decoration: BoxDecoration(
+                color: const Color.fromRGBO(72, 191, 227, 1),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(40.r),
+                  bottomRight: Radius.circular(40.r),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          BlocProvider.of<MonthCubit>(context).decrement();
-                          BlocProvider.of<MealCubit>(context).getRecent(
-                              BlocProvider.of<MonthCubit>(context).state.month);
-                          BlocProvider.of<PaymentCubit>(context).getRecent(
-                              BlocProvider.of<MonthCubit>(context).state.month);
-                          BlocProvider.of<SummaryCubit>(context).getRecent(
-                              BlocProvider.of<MonthCubit>(context).state.month);
-                        },
-                        child: const FaIcon(
-                          FontAwesomeIcons.angleLeft,
-                          color: Colors.white,
-                        ),
-                      ),
-                      BlocBuilder<MonthCubit, MonthState>(
-                          builder: (context, state) {
-                        return Text(
-                          month[state.month - 1],
-                          style: TextStyle(
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.bold,
+              ),
+              child: Center(
+                child: Container(
+                  width: 0.9.sw,
+                  height: 40.h,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: const Color.fromRGBO(255, 255, 255, 0.7),
+                        width: 3.sp),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            BlocProvider.of<MonthCubit>(context).decrement();
+                            BlocProvider.of<MealCubit>(context).getRecent(
+                                BlocProvider.of<MonthCubit>(context)
+                                    .state
+                                    .month);
+                            BlocProvider.of<PaymentCubit>(context).getRecent(
+                                BlocProvider.of<MonthCubit>(context)
+                                    .state
+                                    .month);
+                            BlocProvider.of<SummaryCubit>(context).getRecent(
+                                BlocProvider.of<MonthCubit>(context)
+                                    .state
+                                    .month);
+                          },
+                          child: const FaIcon(
+                            FontAwesomeIcons.angleLeft,
                             color: Colors.white,
                           ),
-                        );
-                      }),
-                      InkWell(
-                        onTap: () {
-                          BlocProvider.of<MonthCubit>(context).increment();
-                          BlocProvider.of<MealCubit>(context).getRecent(
-                              BlocProvider.of<MonthCubit>(context).state.month);
-                          BlocProvider.of<PaymentCubit>(context).getRecent(
-                              BlocProvider.of<MonthCubit>(context).state.month);
-                          BlocProvider.of<SummaryCubit>(context).getRecent(
-                              BlocProvider.of<MonthCubit>(context).state.month);
-                        },
-                        child: const FaIcon(
-                          FontAwesomeIcons.angleRight,
-                          color: Colors.white,
                         ),
-                      ),
-                    ],
+                        BlocBuilder<MonthCubit, MonthState>(
+                            builder: (context, state) {
+                          return Text(
+                            month[state.month - 1],
+                            style: TextStyle(
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          );
+                        }),
+                        InkWell(
+                          onTap: () {
+                            BlocProvider.of<MonthCubit>(context).increment();
+                            BlocProvider.of<MealCubit>(context).getRecent(
+                                BlocProvider.of<MonthCubit>(context)
+                                    .state
+                                    .month);
+                            BlocProvider.of<PaymentCubit>(context).getRecent(
+                                BlocProvider.of<MonthCubit>(context)
+                                    .state
+                                    .month);
+                            BlocProvider.of<SummaryCubit>(context).getRecent(
+                                BlocProvider.of<MonthCubit>(context)
+                                    .state
+                                    .month);
+                          },
+                          child: const FaIcon(
+                            FontAwesomeIcons.angleRight,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          BlocBuilder<SummaryCubit, SummaryState>(
-            builder: (context, state) => state.cumulativeMeal.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 200),
-                    child: Center(
-                      child: Text(
-                        "No Data",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24.sp),
-                      ),
-                    ),
-                  )
-                : Container(),
-          ),
-          BlocBuilder<SummaryCubit, SummaryState>(
-            builder: (context, state) => state.cumulativeMeal.isNotEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      width: 0.95.sw,
-                      height: 200.h,
-                      decoration: BoxDecoration(
-                        color: Colors.white70,
-                        borderRadius: BorderRadius.circular(
-                          20.r,
+            BlocBuilder<SummaryCubit, SummaryState>(
+              builder: (context, state) => state.cumulativeMeal.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 200),
+                      child: Center(
+                        child: Text(
+                          "No Data",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24.sp),
                         ),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          line("Meal", state.meals.toString()),
-                          line("Payment", state.payment.toString()),
-                          GestureDetector(
+                    )
+                  : Container(),
+            ),
+            BlocBuilder<SummaryCubit, SummaryState>(
+              builder: (context, state) => state.cumulativeMeal.isNotEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Container(
+                        width: 0.95.sw,
+                        height: 200.h,
+                        decoration: BoxDecoration(
+                          color: Colors.white70,
+                          borderRadius: BorderRadius.circular(
+                            20.r,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            line(
+                              "Meal",
+                              state.meals.toString(),
+                            ),
+                            line(
+                              "Payment",
+                              state.payment.toString(),
+                            ),
+                            GestureDetector(
                               onTap: () {
                                 tx.text = state.payback.toString();
+                                data = tx.text;
                                 showDialog(
                                   context: context,
                                   barrierDismissible: false,
@@ -268,21 +373,23 @@ class _SummaryPageState extends State<SummaryPage>
                                   },
                                 );
                               },
-                              child:
-                                  line("Pay Back", state.payback.toString())),
-                          line(
-                            "C/M",
-                            ((state.payment - state.payback) / state.meals)
-                                .toStringAsFixed(2),
-                          ),
-                        ],
+                              child: line(
+                                "Pay Back",
+                                state.payback.toString(),
+                              ),
+                            ),
+                            line(
+                              "C/M",
+                              ((state.payment - state.payback) / state.meals)
+                                  .toStringAsFixed(2),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                : Container(),
-          ),
-          BlocBuilder<SummaryCubit, SummaryState>(
-              //TODO Fix Chart
+                    )
+                  : Container(),
+            ),
+            BlocBuilder<SummaryCubit, SummaryState>(
               builder: (context, state) =>
                   state.cumulativeMeal.isNotEmpty && state.show
                       ? Padding(
@@ -295,7 +402,6 @@ class _SummaryPageState extends State<SummaryPage>
                               ),
                             ),
                             child: SfCartesianChart(
-                              plotAreaBackgroundColor: Colors.white,
                               title: ChartTitle(
                                 text: "Meal Taken",
                                 textStyle: ts(),
@@ -340,90 +446,70 @@ class _SummaryPageState extends State<SummaryPage>
                             ),
                           ),
                         )
-                      : Container()),
-//TODO Add frequency
-        ],
+                      : Container(),
+            ),
+            BlocBuilder<SummaryCubit, SummaryState>(
+              builder: (context, state) => state.cumulativeMeal.isNotEmpty &&
+                      state.show
+                  ? Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white70,
+                          borderRadius: BorderRadius.circular(
+                            20.r,
+                          ),
+                        ),
+                        child: SfCartesianChart(
+                          title: ChartTitle(
+                            text: "Meal Taken",
+                            textStyle: ts(),
+                          ),
+                          zoomPanBehavior: ZoomPanBehavior(
+                            enablePinching: true,
+                            enablePanning: true,
+                          ),
+                          primaryXAxis: CategoryAxis(
+                            title: AxisTitle(
+                              text: 'Week Day',
+                              textStyle: ts(),
+                            ),
+                            minorGridLines: const MinorGridLines(
+                                color: Colors.black26, dashArray: [2.5]),
+                            majorGridLines: const MajorGridLines(
+                                color: Colors.black54, dashArray: [5, 2.5]),
+                          ),
+                          primaryYAxis: CategoryAxis(
+                            title: AxisTitle(
+                              text: 'Amount',
+                              textStyle: ts(),
+                            ),
+                          ),
+                          series: <ChartSeries<ChartData2, String>>[
+                            ColumnSeries<ChartData2, String>(
+                                dataSource: state.weeklyMeal,
+                                xValueMapper: (ChartData2 data, _) => data.x,
+                                yValueMapper: (ChartData2 data, _) => data.y,
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(20.r),
+                                ),
+                                color: Colors.red,
+                                isVisibleInLegend: true,
+                                markerSettings: const MarkerSettings(
+                                  height: 15,
+                                  width: 15,
+                                ),
+                                dataLabelSettings:
+                                    const DataLabelSettings(isVisible: true)),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Container(),
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  Future<void> edit(BuildContext context) async {
-    if (rg.hasMatch(data)) {
-      int id = await PayBackDB.getID(
-          BlocProvider.of<MonthCubit>(context).state.month);
-      PayBackDB.update(id, int.parse(data));
-      BlocProvider.of<SummaryCubit>(context)
-          .getRecent(BlocProvider.of<MonthCubit>(context).state.month);
-      cancel(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: SizedBox(
-            height: 50.h,
-            child: const Center(
-              child: Text('Use Number Only'),
-            ),
-          ),
-          duration: const Duration(milliseconds: 1500),
-          width: 0.9.sw,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8.0, // Inner padding for SnackBar content.
-          ),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void cancel(BuildContext context) {
-    Navigator.of(context).pop();
-    data = "";
-    tx.text = "";
-    BlocProvider.of<SummaryCubit>(context).show();
-  }
-
-  Row line(String heading, String amount) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 80.w,
-          child: Center(
-            child: Text(
-              heading,
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-        SizedBox(
-          width: 20.w,
-        ),
-        Neumorphic(
-          style: NeumorphicStyle(
-            shape: NeumorphicShape.concave,
-            boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(12)),
-            depth: 8,
-            lightSource: LightSource.bottom,
-            color: const Color.fromARGB(255, 216, 215, 215),
-          ),
-          child: SizedBox(
-            width: 80.w,
-            height: 30.h,
-            child: Center(
-              child: Text(amount),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  TextStyle ts() {
-    return const TextStyle(
-        color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold);
   }
 }

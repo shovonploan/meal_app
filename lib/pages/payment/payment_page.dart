@@ -22,11 +22,18 @@ class PaymentPage extends StatefulWidget {
 
 class _PaymentPageState extends State<PaymentPage>
     with SingleTickerProviderStateMixin {
-  late Animation<double> scaleAnimation;
   late AnimationController controller;
   String data = "";
   RegExp rg = RegExp(r'\d+$');
+  late Animation<double> scaleAnimation;
   TextEditingController tx = TextEditingController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+    tx.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -43,12 +50,92 @@ class _PaymentPageState extends State<PaymentPage>
     controller.forward();
   }
 
-  @override
-  void dispose() {
-    controller.dispose();
-    tx.dispose();
-    super.dispose();
+  void add(DateState state, BuildContext context) {
+    if (rg.hasMatch(data)) {
+      Payment payment = Payment(
+          amount: int.parse(data),
+          day: state.date.day,
+          month: state.date.month,
+          year: state.date.year);
+      PaymentDB.create(payment);
+      BlocProvider.of<PaymentCubit>(context)
+          .getRecent(BlocProvider.of<MonthCubit>(context).state.month);
+      data = "";
+      BlocProvider.of<DateCubit>(context).reset();
+      Navigator.of(context).pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: SizedBox(
+            height: 50.h,
+            child: const Center(
+              child: Text('Use Number Only'),
+            ),
+          ),
+          duration: const Duration(milliseconds: 1500),
+          width: 0.9.sw,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8.0, // Inner padding for SnackBar content.
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
+
+  void edit(PaymentState state, int index, BuildContext context) {
+    if (rg.hasMatch(data)) {
+      Payment payment = Payment(
+          id: state.payments[index].id,
+          amount: int.parse(data),
+          day: BlocProvider.of<DateCubit>(context).state.date.day,
+          month: BlocProvider.of<DateCubit>(context).state.date.month,
+          year: BlocProvider.of<DateCubit>(context).state.date.year);
+      PaymentDB.update(payment);
+      BlocProvider.of<PaymentCubit>(context)
+          .getRecent(BlocProvider.of<MonthCubit>(context).state.month);
+      data = "";
+      tx.text = "";
+      BlocProvider.of<DateCubit>(context).reset();
+      Navigator.of(context).pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: SizedBox(
+            height: 50.h,
+            child: const Center(
+              child: Text('Use Number Only'),
+            ),
+          ),
+          duration: const Duration(milliseconds: 1500),
+          width: 0.9.sw,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8.0, // Inner padding for SnackBar content.
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  String formate(int num) {
+    if (num >= 10) return num.toString();
+    return "0$num";
+  }
+
+  TextStyle style() => TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 20.sp,
+        color: const Color.fromARGB(255, 18, 59, 21),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -126,6 +213,7 @@ class _PaymentPageState extends State<PaymentPage>
                                     onPressed: (context) {
                                       tx.text = state.payments[index].amount
                                           .toString();
+                                      data = tx.text;
                                       showDialog(
                                         context: context,
                                         barrierDismissible: false,
@@ -190,38 +278,52 @@ class _PaymentPageState extends State<PaymentPage>
                                                                     .center,
                                                             children: [
                                                               BlocBuilder<
-                                                                      DateCubit,
-                                                                      DateState>(
-                                                                  builder:
-                                                                      (context,
-                                                                              state) =>
-                                                                          Text(
-                                                                            "${state.date.day}/${state.date.month}",
-                                                                            style:
-                                                                                TextStyle(fontSize: 16.sp, color: Colors.black),
-                                                                          )),
+                                                                  DateCubit,
+                                                                  DateState>(
+                                                                builder: (context,
+                                                                        state) =>
+                                                                    Text(
+                                                                  "${state.date.day}/${state.date.month}",
+                                                                  style: TextStyle(
+                                                                      fontSize:
+                                                                          16.sp,
+                                                                      color: Colors
+                                                                          .black),
+                                                                ),
+                                                              ),
                                                               SizedBox(
                                                                 width: 5.w,
                                                               ),
                                                               BlocBuilder<
-                                                                      DateCubit,
-                                                                      DateState>(
-                                                                  builder: (context,
-                                                                          state) =>
-                                                                      InkWell(
-                                                                        onTap:
-                                                                            () async {
-                                                                          final DateTime date = await showDatePicker(
-                                                                              context: context,
-                                                                              initialDate: state.date,
-                                                                              firstDate: DateTime(2020, 8),
-                                                                              lastDate: DateTime.now()) as DateTime;
-                                                                          BlocProvider.of<DateCubit>(context)
-                                                                              .refresh(date);
-                                                                        },
-                                                                        child: const Icon(
-                                                                            Icons.calendar_month),
-                                                                      )),
+                                                                  DateCubit,
+                                                                  DateState>(
+                                                                builder: (context,
+                                                                        state) =>
+                                                                    InkWell(
+                                                                  onTap:
+                                                                      () async {
+                                                                    final DateTime date = await showDatePicker(
+                                                                        context:
+                                                                            context,
+                                                                        initialDate:
+                                                                            state
+                                                                                .date,
+                                                                        firstDate: DateTime(
+                                                                            2020,
+                                                                            8),
+                                                                        lastDate:
+                                                                            DateTime.now()) as DateTime;
+                                                                    // ignore: use_build_context_synchronously
+                                                                    BlocProvider.of<DateCubit>(
+                                                                            context)
+                                                                        .refresh(
+                                                                            date);
+                                                                  },
+                                                                  child: const Icon(
+                                                                      Icons
+                                                                          .calendar_month),
+                                                                ),
+                                                              ),
                                                             ],
                                                           ),
                                                           SizedBox(
@@ -240,36 +342,44 @@ class _PaymentPageState extends State<PaymentPage>
                                                                         context),
                                                                 child: Text(
                                                                   "Edit",
-                                                                  style: TextStyle(
-                                                                      fontSize:
-                                                                          20.sp,
-                                                                      color: const Color
-                                                                              .fromRGBO(
-                                                                          94,
-                                                                          96,
-                                                                          206,
-                                                                          1)),
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        20.sp,
+                                                                    color: const Color
+                                                                            .fromRGBO(
+                                                                        94,
+                                                                        96,
+                                                                        206,
+                                                                        1),
+                                                                  ),
                                                                 ),
                                                               ),
                                                               TextButton(
                                                                 onPressed: () {
                                                                   data = "";
                                                                   tx.text = "";
+                                                                  BlocProvider.of<
+                                                                              DateCubit>(
+                                                                          context)
+                                                                      .reset();
                                                                   Navigator.of(
                                                                           context)
                                                                       .pop();
                                                                 },
                                                                 child: Text(
                                                                   "Cancel",
-                                                                  style: TextStyle(
-                                                                      fontSize:
-                                                                          20.sp,
-                                                                      color: const Color
-                                                                              .fromRGBO(
-                                                                          94,
-                                                                          96,
-                                                                          206,
-                                                                          1)),
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        20.sp,
+                                                                    color: const Color
+                                                                            .fromRGBO(
+                                                                        94,
+                                                                        96,
+                                                                        206,
+                                                                        1),
+                                                                  ),
                                                                 ),
                                                               )
                                                             ],
@@ -499,6 +609,7 @@ class _PaymentPageState extends State<PaymentPage>
                                                               DateTime(2020, 8),
                                                           lastDate: DateTime
                                                               .now()) as DateTime;
+                                                  // ignore: use_build_context_synchronously
                                                   BlocProvider.of<DateCubit>(
                                                           context)
                                                       .refresh(date);
@@ -521,24 +632,27 @@ class _PaymentPageState extends State<PaymentPage>
                                                 child: Text(
                                                   "Add",
                                                   style: TextStyle(
-                                                      fontSize: 20.sp,
-                                                      color:
-                                                          const Color.fromRGBO(
-                                                              94, 96, 206, 1)),
+                                                    fontSize: 20.sp,
+                                                    color: const Color.fromRGBO(
+                                                        94, 96, 206, 1),
+                                                  ),
                                                 ),
                                               ),
                                               TextButton(
                                                 onPressed: () {
                                                   data = "";
+                                                  BlocProvider.of<DateCubit>(
+                                                          context)
+                                                      .reset();
                                                   Navigator.of(context).pop();
                                                 },
                                                 child: Text(
                                                   "Cancel",
                                                   style: TextStyle(
-                                                      fontSize: 20.sp,
-                                                      color:
-                                                          const Color.fromRGBO(
-                                                              94, 96, 206, 1)),
+                                                    fontSize: 20.sp,
+                                                    color: const Color.fromRGBO(
+                                                        94, 96, 206, 1),
+                                                  ),
                                                 ),
                                               )
                                             ],
@@ -569,88 +683,4 @@ class _PaymentPageState extends State<PaymentPage>
       floatingActionButtonLocation: FloatingActionButtonLocation.miniEndDocked,
     );
   }
-
-  void add(DateState state, BuildContext context) {
-    if (rg.hasMatch(data)) {
-      Payment payment = Payment(
-          amount: int.parse(data),
-          day: state.date.day,
-          month: state.date.month,
-          year: state.date.year);
-      PaymentDB.create(payment);
-      BlocProvider.of<PaymentCubit>(context)
-          .getRecent(BlocProvider.of<MonthCubit>(context).state.month);
-      data = "";
-      Navigator.of(context).pop();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: SizedBox(
-            height: 50.h,
-            child: const Center(
-              child: Text('Use Number Only'),
-            ),
-          ),
-          duration: const Duration(milliseconds: 1500),
-          width: 0.9.sw,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8.0, // Inner padding for SnackBar content.
-          ),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void edit(PaymentState state, int index, BuildContext context) {
-    if (rg.hasMatch(data)) {
-      Payment payment = Payment(
-          id: state.payments[index].id,
-          amount: int.parse(data),
-          day: BlocProvider.of<DateCubit>(context).state.date.day,
-          month: BlocProvider.of<DateCubit>(context).state.date.month,
-          year: BlocProvider.of<DateCubit>(context).state.date.year);
-      PaymentDB.update(payment);
-      BlocProvider.of<PaymentCubit>(context)
-          .getRecent(BlocProvider.of<MonthCubit>(context).state.month);
-      data = "";
-      tx.text = "";
-      Navigator.of(context).pop();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: SizedBox(
-            height: 50.h,
-            child: const Center(
-              child: Text('Use Number Only'),
-            ),
-          ),
-          duration: const Duration(milliseconds: 1500),
-          width: 0.9.sw,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8.0, // Inner padding for SnackBar content.
-          ),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  String formate(int num) {
-    if (num >= 10) return num.toString();
-    return "0$num";
-  }
-
-  TextStyle style() => TextStyle(
-      fontWeight: FontWeight.bold,
-      fontSize: 20.sp,
-      color: const Color.fromARGB(255, 18, 59, 21));
 }

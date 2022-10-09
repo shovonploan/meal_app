@@ -5,10 +5,11 @@ String tablePayment = "payment";
 String tablePayBack = "payback";
 
 class MealFields {
-  static const List<String> values = [id, amount, day, month, year];
+  static const List<String> values = [id, amount, day, weekDay, month, year];
   static const String id = "id";
   static const String amount = "amount";
   static const String day = "day";
+  static const String weekDay = "weekDay";
   static const String month = "month";
   static const String year = "year";
 }
@@ -34,12 +35,14 @@ class Meal {
   final int? id;
   final double amount;
   final int day;
+  final int weekDay;
   final int month;
   final int year;
   Meal({
     this.id,
     required this.amount,
     required this.day,
+    required this.weekDay,
     required this.month,
     required this.year,
   });
@@ -48,6 +51,7 @@ class Meal {
     int? id,
     double? amount,
     int? day,
+    int? weekDay,
     int? month,
     int? year,
   }) {
@@ -55,6 +59,7 @@ class Meal {
       id: id ?? this.id,
       amount: amount ?? this.amount,
       day: day ?? this.day,
+      weekDay: weekDay ?? this.weekDay,
       month: month ?? this.month,
       year: year ?? this.year,
     );
@@ -65,6 +70,7 @@ class Meal {
       'id': id,
       'amount': amount,
       'day': day,
+      'weekDay': weekDay,
       'month': month,
       'year': year,
     };
@@ -75,6 +81,7 @@ class Meal {
       id: map['id']?.toInt(),
       amount: map['amount']?.toDouble() ?? 0.0,
       day: map['day']?.toInt() ?? 0,
+      weekDay: map['weekDay']?.toInt() ?? 0,
       month: map['month']?.toInt() ?? 0,
       year: map['year']?.toInt() ?? 0,
     );
@@ -86,7 +93,7 @@ class Meal {
 
   @override
   String toString() {
-    return 'Meal(id: $id, amount: $amount, day: $day, month: $month, year: $year)';
+    return 'Meal(id: $id, amount: $amount, day: $day, weekDay: $weekDay, month: $month, year: $year)';
   }
 
   @override
@@ -97,6 +104,7 @@ class Meal {
         other.id == id &&
         other.amount == amount &&
         other.day == day &&
+        other.weekDay == weekDay &&
         other.month == month &&
         other.year == year;
   }
@@ -106,6 +114,7 @@ class Meal {
     return id.hashCode ^
         amount.hashCode ^
         day.hashCode ^
+        weekDay.hashCode ^
         month.hashCode ^
         year.hashCode;
   }

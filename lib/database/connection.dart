@@ -38,6 +38,7 @@ class Connection {
       ${MealFields.id} $idType,
       ${MealFields.amount} $numberType,
       ${MealFields.day} $integerType,
+      ${MealFields.weekDay} $integerType,
       ${MealFields.month} $integerType,
       ${MealFields.year} $integerType
     )''');

@@ -48,4 +48,22 @@ class MealDB {
     }
     return 0;
   }
+
+  static Future<double> getDayTotal(int month, int day) async {
+    final db = await Connection.instance.database;
+    final maps = await db.query(tableMeal,
+        columns: ["SUM(${MealFields.amount}) as s"],
+        where:
+            "${MealFields.weekDay}=? AND ${MealFields.month}=? AND ${MealFields.year}=?",
+        whereArgs: [day, month, DateTime.now().year]);
+    if (maps[0]["s"] != null) {
+      final temp = maps[0]["s"];
+      if (temp is int) {
+        return temp.toDouble();
+      } else {
+        return temp as double;
+      }
+    }
+    return 0;
+  }
 }

@@ -14,7 +14,6 @@ class PageInitial extends PageState {
 class PageCubit extends Cubit<PageState> {
   PageCubit() : super(PageInitial(isAuthenticated: false));
   void refresh(isAuthenticated) {
-    DateTime start = DateTime.now();
     emit(PageInitial(isAuthenticated: isAuthenticated));
   }
 }
